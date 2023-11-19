@@ -1,4 +1,4 @@
 
 export const jwtConstants = {
-  secret: process.env.secret,//'DO NOT USE THIS VALUE. INSTEAD, CREATE A COMPLEX SECRET AND KEEP IT SAFE OUTSIDE OF THE SOURCE CODE.',
+  secret: process.env.secret || 'Would it save you a lot of time if I just gave up and went mad now?',
 };
