@@ -1,3 +1,9 @@
+<p>
+  NOTE: before running create a .env file containing:
+  LISTEN_PORT (defaults to '9000')
+  JWT_SECRET (default to 'Would it save you a lot of time if I just gave up and went mad now?')
+  SHARE_A_MEAL_CONNECTIONSTRING (defaults to 'mongodb://localhost:27017/share-a-meal')
+</p>
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
 </p>
