@@ -3,6 +3,7 @@ import { MealsService } from './meals.service';
 import { Meal } from "./schemas/meal.schema";
 import { Public } from "../auth/decorators/public.decorator";
 
+//<host>/api/<endpoint>
 @Controller('meals')
 export class MealsController {
 

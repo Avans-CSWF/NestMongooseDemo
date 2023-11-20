@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateMealDto } from './dto/create-meal.dto';
-import { UpdateMealDto } from './dto/update-meal.dto';
 import { Meal } from './schemas/meal.schema';
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
@@ -19,11 +17,12 @@ export class MealsService {
   }
 
   async findOne(id: string) : Promise<Meal> {
+
     return await this.mealModel.findById(id).exec();
   }
 
   async update(id: string, meal: Meal) : Promise<Meal> {
-    return await this.mealModel.findByIdAndUpdate(id, meal, {new: true});
+    return this.mealModel.findByIdAndUpdate(id, meal, { new: true });
   }
 
   async remove(id: string) : Promise<Meal> {

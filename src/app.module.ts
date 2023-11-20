@@ -6,17 +6,24 @@ import { MealsModule } from './meals/meals.module';
 import { CooksModule } from './cooks/cooks.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import {ConfigModule} from "@nestjs/config";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { RecommendationsModule } from './recommendations/recommendations.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
-    // MongooseModule.forRoot('mongodb://localhost:27017/share-a-meal'),
-    MongooseModule.forRoot(String(process.env.SHARE_A_MEAL_MONGO_CONNECTIONSTRING || 'mongodb://localhost:27017/share-a-meal')),
+    MongooseModule.forRootAsync({
+      imports: [ ConfigModule ],
+      inject: [ ConfigService ],
+      useFactory: (configService: ConfigService) => ({
+        uri: configService.get<string>('SHARE_A_MEAL_MONGO_CONNECTIONSTRING'),
+      }),
+    }),
     MealsModule,
     CooksModule,
     AuthModule,
     UsersModule,
+    RecommendationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
