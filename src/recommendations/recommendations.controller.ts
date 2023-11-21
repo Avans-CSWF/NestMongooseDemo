@@ -10,7 +10,7 @@ export class RecommendationsController {
   private readonly logger = new Logger(RecommendationsController.name);
   constructor(
     private readonly recommendationsService: RecommendationsService,
-    private readonly neo4jService: Neo4jService
+    //private readonly neo4jService: Neo4jService
   ) {}
 
   // @Public()
@@ -25,7 +25,7 @@ export class RecommendationsController {
 
   @Post()
   create(@Body() createRecommendationDto: CreateRecommendationDto) {
-    return this.recommendationsService.create(createRecommendationDto);
+    //return this.recommendationsService.create(createRecommendationDto);
   }
 
   @Public()

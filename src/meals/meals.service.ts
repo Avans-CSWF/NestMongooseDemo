@@ -2,14 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { Meal } from './schemas/meal.schema';
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
+import { RecommendationsService } from "../recommendations/recommendations.service";
 
 @Injectable()
 export class MealsService {
 
-  constructor(@InjectModel(Meal.name) private readonly mealModel: Model<Meal>) {}
+  constructor(
+    @InjectModel(Meal.name) private readonly mealModel: Model<Meal>,
+    private readonly recommendationsService: RecommendationsService,
+  ) {}
   async create(meal: Meal) : Promise<Meal> {
     const newMeal = new this.mealModel(meal);
-    return await newMeal.save();
+    const createdMeal = await newMeal.save();
+
+    const n4jResult = await this.recommendationsService.createOrUpdateMeal(createdMeal);
+
+    return createdMeal;
   }
 
   async findAll() : Promise<Meal[]> {

@@ -2,16 +2,21 @@ import { Injectable, Logger } from "@nestjs/common";
 import { Cook } from './schemas/cook.schema';
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
+import { RecommendationsService } from "../recommendations/recommendations.service";
 
 @Injectable()
 export class CooksService {
   private readonly logger: Logger = new Logger(CooksService.name);
-  constructor(@InjectModel(Cook.name) private readonly cookModel: Model<Cook>) {}
+  constructor(@InjectModel(Cook.name) private readonly cookModel: Model<Cook>, private readonly recommendationsService: RecommendationsService) {}
   async create(cook: Cook) : Promise<Cook> {
     this.logger.log(`creating cook: ${JSON.stringify(cook)}`);
 
     const newCook = new this.cookModel(cook);
-    return await newCook.save();
+    const createdCook = await newCook.save();
+
+    const n4jResult = await this.recommendationsService.createOrUpdateCook(createdCook);
+
+    return createdCook;
   }
 
   async findAll() : Promise<Cook[]> {

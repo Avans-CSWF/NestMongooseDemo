@@ -12,7 +12,7 @@ export class Meal {
   _id!: string;
 
   @Prop({ required: true })
-  title!: string;
+  name!: string;
 
   @Prop({ required: true })
   description!: string;
@@ -20,8 +20,8 @@ export class Meal {
   @Prop({ required: true })
   isVega!: boolean;
 
-  @Prop({ required: true })
-  dateServed!: Date;
+  // @Prop({ required: true })
+  // dateServed!: Date;
 
   // @Prop({ required: true, type: Object })
   // sort!: string;
