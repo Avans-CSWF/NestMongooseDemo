@@ -1,6 +1,6 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { v4 as uuid } from 'uuid';
-import {IsBoolean, IsInt, IsMongoId, IsString} from 'class-validator';
+import { IsBoolean, IsEmail, IsInt, IsMongoId, IsString } from "class-validator";
 
 @Schema()
 export class Cook {
@@ -11,6 +11,7 @@ export class Cook {
   @Prop({ required: true })
   name!: string;
 
+  @IsEmail()
   @Prop({ required: true })
   emailAddress!: string;
 

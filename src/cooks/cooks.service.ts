@@ -16,6 +16,11 @@ export class CooksService {
 
     const n4jResult = await this.recommendationsService.createOrUpdateCook(createdCook);
 
+    // TODO: wrap in transaction -->
+    if (!n4jResult) {
+      await this.cookModel.findByIdAndRemove(createdCook._id);
+    }
+
     return createdCook;
   }
 

@@ -1,9 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { CreateRecommendationDto } from './dto/create-recommendation.dto';
-import { UpdateRecommendationDto } from './dto/update-recommendation.dto';
 import { Neo4jService } from "nest-neo4j/dist";
 import { Meal } from "../meals/schemas/meal.schema";
-import { CooksService } from "../cooks/cooks.service";
 import { Cook } from "../cooks/schemas/cook.schema";
 
 @Injectable()
@@ -35,6 +32,8 @@ return cook`
 
     const result = await this.neo4jService.write(cypeherStatement, {});
 
+    this.logger.log(`result: ${JSON.stringify(result)}`);
+
     return result;
   }
 
@@ -64,37 +63,61 @@ merge (meal)-[recipeCreatedBy:RecipeCreatedBy]->(cook)
 return meal,recipeCreatedBy, cook`
     const result = await this.neo4jService.write(cypherStatement, {});
 
-    return result;
-  }
+    this.logger.log(`result: ${JSON.stringify(result)}`);
 
-  async findAll() {
-    return this.findAllMeals();
+    return true // beter: try-catch en result.records.length > 0;
   }
 
   async findAllMeals() {
-    const result = await this.neo4jService.read('match(meal:Meal) return meal',{});
+    const query = `
+match(meal:Meal) return meal`;
+    const result = await this.neo4jService.read(query,{});
     this.logger.log(`got result: ${JSON.stringify(result)}`);
 
-    return result?.records;
+      return result?.records;
   }
 
-  async findMealsByType(mealType: string) {
-    let query = `match(meal:Meal) where meal.type = '${mealType}' return meal`;
+  async findMealsBySort(mealSort: string) {
+    const query = `
+match(meal:Meal) where meal.sort = '${mealSort}' return meal`;
 
     const result = await this.neo4jService.read(query,{});
 
     return result?.records;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} recommendation`;
+  async findMealsByCookId(cookId: string) {
+    const query = `
+ match(cook:Cook{mongoId:'${cookId}'})<-[RecipeCreatedBy]-(meal:Meal) return meal,cook`;
+    const result = await this.neo4jService.read(query,{});
+
+    return result?.records;
   }
 
-  update(id: number, updateRecommendationDto: UpdateRecommendationDto) {
-    return `This action updates a #${id} recommendation`;
+  async findMealsByCookName(cookName: string) {
+    const query = `
+ match(cook:Cook{name:'${cookName}'})<-[RecipeCreatedBy]-(meal:Meal) return meal,cook`;
+    const result = await this.neo4jService.read(query,{});
+
+    return result?.records;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} recommendation`;
+  async findMealsBySimilarity(mealId: string) {
+    const query = `
+match(meal:Meal{mongoId:'${mealId}'})-[RecipeCreatedBy]->(cook:Cook)<-[RecipeCreatedBy]-(similarMeal:Meal) return similarMeal,cook`;
+
+    const result = await this.neo4jService.read(query,{});
+
+    return result?.records;
+  }
+
+
+
+  async remove(id: string) {
+    const query = `
+ match(n) where n.mongoId = '${id}' detach delete n`;
+    const result = await this.neo4jService.write(query,{});
+
+    return true;
   }
 }

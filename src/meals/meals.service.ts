@@ -1,22 +1,43 @@
 import { Injectable } from '@nestjs/common';
 import { Meal } from './schemas/meal.schema';
-import { Model } from "mongoose";
-import { InjectModel } from "@nestjs/mongoose";
+import { Connection, Model } from "mongoose";
+import { InjectConnection, InjectModel } from "@nestjs/mongoose";
 import { RecommendationsService } from "../recommendations/recommendations.service";
+import { transaction } from "../app.helpers";
 
 @Injectable()
 export class MealsService {
 
   constructor(
     @InjectModel(Meal.name) private readonly mealModel: Model<Meal>,
+    @InjectConnection() private connection: Connection,
     private readonly recommendationsService: RecommendationsService,
   ) {}
   async create(meal: Meal) : Promise<Meal> {
+    // Using transactions -->
+    // return transaction(this.connection, async session => {
+    //   const newMeal = new this.mealModel(meal);
+    //   const createdMeal = await newMeal.save({session});
+    //
+    //   const n4jResult = await this.recommendationsService.createOrUpdateMeal(createdMeal);
+    //
+    //   if (!n4jResult) {
+    //     await session.abortTransaction();
+    //   }
+    //   else {
+    //     await session.commitTransaction();
+    //   }
+    //
+    //   return createdMeal;
+    // });
     const newMeal = new this.mealModel(meal);
     const createdMeal = await newMeal.save();
 
     const n4jResult = await this.recommendationsService.createOrUpdateMeal(createdMeal);
-
+    // TODO: wrap in transaction -->
+    if (!n4jResult) {
+      await this.mealModel.findByIdAndRemove(createdMeal._id);
+    }
     return createdMeal;
   }
 
