@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { Meal } from './schemas/meal.schema';
 import { Connection, Model } from "mongoose";
 import { InjectConnection, InjectModel } from "@nestjs/mongoose";
 import { RecommendationsService } from "../recommendations/recommendations.service";
 import { transaction } from "../app.helpers";
+import { CooksService } from "../cooks/cooks.service";
 
 @Injectable()
 export class MealsService {
@@ -11,7 +12,10 @@ export class MealsService {
   constructor(
     @InjectModel(Meal.name) private readonly mealModel: Model<Meal>,
     @InjectConnection() private connection: Connection,
-    private readonly recommendationsService: RecommendationsService,
+    // NOTE: circular refs, Anti pattern!!!
+    // Use proper component design and avoid circular references -->
+    @Inject(forwardRef(() => RecommendationsService)) private readonly recommendationsService: RecommendationsService,
+    @Inject(forwardRef(() => CooksService)) private readonly cooksService: CooksService,
   ) {}
   async create(meal: Meal) : Promise<Meal> {
     // Using transactions -->

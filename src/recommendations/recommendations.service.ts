@@ -1,14 +1,22 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { Neo4jService } from "nest-neo4j/dist";
 import { Meal } from "../meals/schemas/meal.schema";
 import { Cook } from "../cooks/schemas/cook.schema";
+import { MealsService } from "../meals/meals.service";
+import { CooksService } from "../cooks/cooks.service";
 
 @Injectable()
 export class RecommendationsService {
-
+  // TODO: use cypher query parameters in queries (https://neo4j.com/docs/cypher-manual/current/syntax/parameters/)
   private readonly logger:Logger = new Logger(RecommendationsService.name);
 
-  constructor(private readonly neo4jService: Neo4jService){
+  constructor(
+    private readonly neo4jService: Neo4jService,
+    // NOTE: circular refs, Anti pattern!!!
+    // Use proper component design and avoid circular references -->
+    @Inject(forwardRef(() => MealsService)) private readonly mealsService: MealsService,
+    @Inject(forwardRef(() => MealsService)) private readonly cooksService: CooksService,
+  ){
   }
 
   async createOrUpdateCook(newCook: Cook) {
@@ -83,6 +91,17 @@ match(meal:Meal) where meal.sort = '${mealSort}' return meal`;
 
     const result = await this.neo4jService.read(query,{});
 
+    for(let meal of result?.records){
+      this.logger.log(`${meal.get('meal').properties.mongoId}`);
+      // TODO Mongo Id is here, fetch the matching document from Mongo to enrich model
+      // Best to move this to a dedicated data enrichment service
+      var mongoMealDocument = await this.mealsService.findOne(meal.get('meal')?.properties.mongoId);
+      if (mongoMealDocument)
+      {
+        this.logger.log(`found mongo meal document: ${JSON.stringify(mongoMealDocument)}`);
+      }
+    }
+
     return result?.records;
   }
 
@@ -99,14 +118,37 @@ match(meal:Meal) where meal.sort = '${mealSort}' return meal`;
  match(cook:Cook{name:'${cookName}'})<-[RecipeCreatedBy]-(meal:Meal) return meal,cook`;
     const result = await this.neo4jService.read(query,{});
 
+    for(let meal of result?.records){
+      this.logger.log(`${meal.get('meal').properties.mongoId}`);
+      // TODO Mongo Id is here, fetch the matching document from Mongo to enrich model
+      // Best to move this to a dedicated data enrichment service
+      var mongoMealDocument = await this.mealsService.findOne(meal.get('meal')?.properties.mongoId);
+      if (mongoMealDocument)
+      {
+        this.logger.log(`found mongo meal document: ${JSON.stringify(mongoMealDocument)}`);
+      }
+    }
+
     return result?.records;
   }
 
   async findMealsBySimilarity(mealId: string) {
     const query = `
-match(meal:Meal{mongoId:'${mealId}'})-[RecipeCreatedBy]->(cook:Cook)<-[RecipeCreatedBy]-(similarMeal:Meal) return similarMeal,cook`;
+match(meal:Meal{mongoId:'${mealId}'})-[:RecipeCreatedBy]->(cook:Cook)<-[:RecipeCreatedBy]-(similarMeal:Meal) return similarMeal,cook`;
 
     const result = await this.neo4jService.read(query,{});
+    // TODO: map QueryResult to model class
+
+    for(let meal of result?.records){
+      this.logger.log(`${meal.get('similarMeal').properties.mongoId}`);
+      // TODO Mongo Id is here, fetch the matching document from Mongo to enrich model
+      // Best to move this to a dedicated data enrichment service
+      var mongoMealDocument = await this.mealsService.findOne(meal.get('similarMeal')?.properties.mongoId);
+      if (mongoMealDocument)
+      {
+        this.logger.log(`found mongo meal document: ${JSON.stringify(mongoMealDocument)}`);
+      }
+    }
 
     return result?.records;
   }

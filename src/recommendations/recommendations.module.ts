@@ -5,11 +5,13 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { Neo4jModule } from 'nest-neo4j/dist';
 import { Neo4jConfig } from 'nest-neo4j/dist/interfaces/neo4j-config.interface';
 import { CooksModule } from "../cooks/cooks.module";
+import { MealsModule } from "../meals/meals.module";
 
 @Module({
   imports: [
     Neo4jModule.forRootAsync({
-      imports: [ ConfigModule],
+      imports: [
+      ],
       inject: [ ConfigService ],
       useFactory: (configService: ConfigService): Neo4jConfig => ({
         scheme: configService.get('NEO4J_SCHEME'),
@@ -19,6 +21,8 @@ import { CooksModule } from "../cooks/cooks.module";
         password: configService.get('NEO4J_PASSWORD'),
         database: configService.get('NEO4J_DATABASE'),
       })}),
+    forwardRef(() => CooksModule),
+    forwardRef(() => MealsModule),
   ],
   controllers: [RecommendationsController],
   providers: [RecommendationsService],

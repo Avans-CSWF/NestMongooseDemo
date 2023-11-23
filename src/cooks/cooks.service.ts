@@ -1,13 +1,20 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { Cook } from './schemas/cook.schema';
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { RecommendationsService } from "../recommendations/recommendations.service";
+import { MealsService } from "../meals/meals.service";
 
 @Injectable()
 export class CooksService {
   private readonly logger: Logger = new Logger(CooksService.name);
-  constructor(@InjectModel(Cook.name) private readonly cookModel: Model<Cook>, private readonly recommendationsService: RecommendationsService) {}
+  constructor(
+    @InjectModel(Cook.name) private readonly cookModel: Model<Cook>,
+    // NOTE: circular refs, Anti pattern!!!
+    // Use proper component design and avoid circular references -->
+    @Inject(forwardRef(() => RecommendationsService)) private readonly recommendationsService: RecommendationsService,
+    @Inject(forwardRef(() => MealsService)) private readonly mealsService: MealsService,
+  ) {}
   async create(cook: Cook) : Promise<Cook> {
     this.logger.log(`creating cook: ${JSON.stringify(cook)}`);
 
