@@ -17,9 +17,9 @@ export class RecommendationsController {
     return await this.recommendationsService.findAllMeals();
   }
 
-  @Get('by-type/:type')
-  async findMealsByType(@Param('type') mealType: string) {
-    return await this.recommendationsService.findMealsBySort(mealType);
+  @Get('by-sort/:sort')
+  async findMealsByType(@Param('sort') mealSort: string) {
+    return await this.recommendationsService.findMealsBySort(mealSort);
   }
 
   @Get('by-cook-id/:cookId')
