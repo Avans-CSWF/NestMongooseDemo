@@ -26,6 +26,7 @@ export class CooksService {
     // TODO: wrap in transaction -->
     if (!n4jResult) {
       await this.cookModel.findByIdAndRemove(createdCook._id);
+      return null;
     }
 
     return createdCook;

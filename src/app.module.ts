@@ -17,7 +17,7 @@ import { OrdersModule } from './orders/orders.module';
       imports: [ ConfigModule ],
       inject: [ ConfigService ],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('SHARE_A_MEAL_MONGO_CONNECTIONSTRING'),
+        uri: configService.get<string>('SHARE_A_MEAL_MONGO_CONNECTIONSTRING') || 'mongodb://localhost:27017/share-a-meal',
       }),
     }),
     MealsModule,
