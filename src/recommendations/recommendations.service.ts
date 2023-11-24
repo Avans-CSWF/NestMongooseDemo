@@ -22,23 +22,44 @@ export class RecommendationsService {
   async createOrUpdateCook(newCook: Cook) {
     this.logger.log(`creating new cook: ${JSON.stringify(newCook)}`);
 
+//     const cypeherStatement = `
+// merge(cook:Cook {
+//     mongoId: '${newCook._id}'
+// })
+// on create set
+//     cook.name = '${newCook.name}',
+//     cook.emailAddress = '${newCook.emailAddress}',
+//     cook.isActive = ${newCook.isActive}
+// on match set
+//     cook.name = '${newCook.name}',
+//     cook.emailAddress = '${newCook.emailAddress}',
+//     cook.isActive = ${newCook.isActive}
+// return cook`
     const cypeherStatement = `
 merge(cook:Cook {
-    mongoId: '${newCook._id}'
+    mongoId: $mongoId
 })
 on create set 
-    cook.name = '${newCook.name}',
-    cook.emailAddress = '${newCook.emailAddress}', 
-    cook.isActive = ${newCook.isActive}
+    cook.name = $name,
+    cook.emailAddress = $emailAddress, 
+    cook.isActive = $isActive
 on match set 
-    cook.name = '${newCook.name}',
-    cook.emailAddress = '${newCook.emailAddress}', 
-    cook.isActive = ${newCook.isActive}    
-return cook`
+    cook.name = $name,
+    cook.emailAddress = $emailAddress, 
+    cook.isActive = $isActive    
+return cook
+`;
 
-    this.logger.log(`cypher statement: ${cypeherStatement}`);
+    //this.logger.log(`cypher statement: ${cypeherStatement}`);
 
-    const result = await this.neo4jService.write(cypeherStatement, {});
+    const result = await this.neo4jService.write(
+      cypeherStatement,
+      {
+        mongoId: newCook._id,
+        name: newCook.name,
+        emailAddress: newCook.emailAddress,
+        isActive: newCook.isActive
+    });
 
     this.logger.log(`result: ${JSON.stringify(result)}`);
 
@@ -49,27 +70,57 @@ return cook`
     this.logger.log(`creating new meal: ${JSON.stringify(newMeal)}`);
     //const session = this.neo4jService.getWriteSession('neo4j');
 
+//     const cypherStatement = `
+// merge (meal:Meal {
+//       mongoId: '${newMeal._id}'
+// })
+// on create set
+//       meal.name= '${newMeal.name}',
+//       meal.description= '${newMeal.description}',
+//       meal.isVega= ${newMeal.isVega},
+//       meal.sort= '${newMeal.sort}',
+//       meal.cookMongoId= '${newMeal.cook._id}'
+// on match set
+//       meal.name= '${newMeal.name}',
+//       meal.description= '${newMeal.description}',
+//       meal.isVega= ${newMeal.isVega},
+//       meal.sort= '${newMeal.sort}',
+//       meal.cookMongoId= '${newMeal.cook._id}'
+// with meal
+// match(cook:Cook {mongoId: '${newMeal.cook._id}'})
+// merge (meal)-[recipeCreatedBy:RecipeCreatedBy]->(cook)
+// return meal,recipeCreatedBy, cook
+// `
     const cypherStatement = `
-merge (meal:Meal {
-      mongoId: '${newMeal._id}'
+  merge (meal:Meal {
+      mongoId: $mongoId
 })
 on create set
-      meal.name= '${newMeal.name}',
-      meal.description= '${newMeal.description}',
-      meal.isVega= ${newMeal.isVega},
-      meal.sort= '${newMeal.sort}',
-      meal.cookMongoId= '${newMeal.cook._id}'
+      meal.name= $name,
+      meal.description= $description,
+      meal.isVega= $isVega,
+      meal.sort= $sort,
+      meal.cookMongoId= $cookMongoId
 on match set
-      meal.name= '${newMeal.name}',
-      meal.description= '${newMeal.description}',
-      meal.isVega= ${newMeal.isVega},
-      meal.sort= '${newMeal.sort}',
-      meal.cookMongoId= '${newMeal.cook._id}'
+      meal.name= $name,
+      meal.description= $description,
+      meal.isVega= $isVega,
+      meal.sort= $sort,
+      meal.cookMongoId= $cookMongoId
 with meal 
-match(cook:Cook {mongoId: '${newMeal.cook._id}'})
+match(cook:Cook {mongoId: $cookMongoId})
 merge (meal)-[recipeCreatedBy:RecipeCreatedBy]->(cook)      
-return meal,recipeCreatedBy, cook`
-    const result = await this.neo4jService.write(cypherStatement, {});
+return meal,recipeCreatedBy, cook
+`;
+    const result = await this.neo4jService.write(
+      cypherStatement,
+      {mongoId: newMeal._id,
+        name: newMeal.name,
+        description: newMeal.description,
+        isVega: newMeal.isVega,
+        sort: newMeal.sort,
+        cookMongoId: newMeal.cook._id
+      });
 
     this.logger.log(`result: ${JSON.stringify(result)}`);
 
@@ -78,7 +129,9 @@ return meal,recipeCreatedBy, cook`
 
   async findAllMeals() {
     const query = `
-match(meal:Meal) return meal`;
+match(meal:Meal) return meal
+`;
+
     const result = await this.neo4jService.read(query,{});
     this.logger.log(`got result: ${JSON.stringify(result)}`);
 
@@ -87,9 +140,10 @@ match(meal:Meal) return meal`;
 
   async findMealsBySort(mealSort: string) {
     const query = `
-match(meal:Meal) where meal.sort = '${mealSort}' return meal`;
+match(meal:Meal) where meal.sort = $mealSort return meal
+`;
 
-    const result = await this.neo4jService.read(query,{});
+    const result = await this.neo4jService.read(query,{mealSort: mealSort});
 
     for(let meal of result?.records){
       this.logger.log(`${meal.get('meal').properties.mongoId}`);
@@ -107,18 +161,20 @@ match(meal:Meal) where meal.sort = '${mealSort}' return meal`;
 
   async findMealsByCookId(cookId: string) {
     const query = `
- match(cook:Cook{mongoId:'${cookId}'})<-[RecipeCreatedBy]-(meal:Meal) return meal,cook`;
-    const result = await this.neo4jService.read(query,{});
+ match(cook:Cook{mongoId:$cookId})<-[RecipeCreatedBy]-(meal:Meal) return meal,cook
+ `;
+    const result = await this.neo4jService.read(query,{cookId: cookId});
 
     return result?.records;
   }
 
   async findMealsByCookName(cookName: string) {
     const query = `
- match(cook:Cook{name:'${cookName}'})<-[RecipeCreatedBy]-(meal:Meal) return meal,cook`;
-    const result = await this.neo4jService.read(query,{});
+ match(cook:Cook{name:$cookName})<-[RecipeCreatedBy]-(meal:Meal) return meal,cook`;
 
-    for(let meal of result?.records){
+    const result = await this.neo4jService.read(query,{ cookName: cookName });
+
+    for ( let meal of result?.records ){
       this.logger.log(`${meal.get('meal').properties.mongoId}`);
       // TODO Mongo Id is here, fetch the matching document from Mongo to enrich model
       // Best to move this to a dedicated data enrichment service
@@ -134,9 +190,11 @@ match(meal:Meal) where meal.sort = '${mealSort}' return meal`;
 
   async findMealsBySimilarity(mealId: string) {
     const query = `
-match(meal:Meal{mongoId:'${mealId}'})-[:RecipeCreatedBy]->(cook:Cook)<-[:RecipeCreatedBy]-(similarMeal:Meal) return similarMeal,cook`;
+match(meal:Meal{mongoId:$mealId})-[:RecipeCreatedBy]->(cook:Cook)<-[:RecipeCreatedBy]-(similarMeal:Meal) 
+return similarMeal,cook
+`;
 
-    const result = await this.neo4jService.read(query,{});
+    const result = await this.neo4jService.read(query,{mealId: mealId});
     // TODO: map QueryResult to model class
 
     for(let meal of result?.records){
@@ -157,8 +215,8 @@ match(meal:Meal{mongoId:'${mealId}'})-[:RecipeCreatedBy]->(cook:Cook)<-[:RecipeC
 
   async remove(id: string) {
     const query = `
- match(n) where n.mongoId = '${id}' detach delete n`;
-    const result = await this.neo4jService.write(query,{});
+ match(n) where n.mongoId = $id detach delete n`;
+    const result = await this.neo4jService.write(query,{id: id});
 
     return true;
   }
